@@ -1,0 +1,51 @@
+From 052ec81dc4f3b0f476c89d86597f6365c1072e38 Mon Sep 17 00:00:00 2001
+From: Ruben Kerkhof <ruben@rubenkerkhof.com>
+Date: Wed, 24 Dec 2014 20:22:04 +0100
+Subject: [PATCH] Remove hardcoded -lresolv, -lnsl and -lsocket
+
+We already check for the functions we need in libnsl
+and libsocket, and I assume we don't need libresolv
+
+Should fix #1967
+---
+ configure.ac | 15 ++-------------
+ 1 file changed, 2 insertions(+), 13 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 47e008c..0ff566e 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -143,13 +143,13 @@ THREADFLAGS=""
+ AM_CONDITIONAL([OS_MACOSX], false)
+ case "$host_os" in
+ solaris2.10)
+-  LIBS="-lposix4 -lresolv -lnsl -lsocket -lpthread -lrt $LIBS"
++  LIBS="-lposix4 -lpthread -lrt $LIBS"
+   CXXFLAGS="-D_REENTRANT $CXXFLAGS"
+   ;;
+ solaris2.8 | solaris2.9 )
+   AC_DEFINE(NEED_POSIX_TYPEDEF,,[If POSIX typedefs need to be defined])
+   AC_DEFINE(NEED_INET_NTOP_PROTO,,[If your OS is so broken that it needs an additional prototype])
+-  LIBS="-lposix4 -lresolv -lnsl -lsocket -lpthread $LIBS"
++  LIBS="-lposix4 -lpthread $LIBS"
+   CXXFLAGS="-D_REENTRANT $CXXFLAGS"
+   ;;
+ linux*)
+@@ -305,17 +305,6 @@ for a in $modules; do
+ 
+   if test ${a} = "gpgsql"; then
+     LIBS="$LIBS $LIBCRYPT"
+-
+-    case "$host_os" in
+-      freebsd*)
+-        ;;
+-      darwin*)
+-        modulelibs="$modulelibs -lresolv"
+-        ;;
+-      *)
+-        modulelibs="$modulelibs -lresolv -lnsl"
+-        ;;
+-    esac
+   fi
+ done
+ 
