@@ -65,8 +65,6 @@ DEPEND="${RDEPEND}
 	doc? ( app-doc/doxygen )"
 
 src_prepare() {
-	epatch "${FILESDIR}"/${P}-fix_glibc_check.patch \
-        "${FILESDIR}"/${P}-remove_hardcoded_libraries.patch
 	eautoreconf
 }
 
