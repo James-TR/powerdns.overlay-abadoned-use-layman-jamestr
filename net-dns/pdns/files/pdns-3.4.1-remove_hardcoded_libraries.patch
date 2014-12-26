@@ -1,37 +1,126 @@
-From 052ec81dc4f3b0f476c89d86597f6365c1072e38 Mon Sep 17 00:00:00 2001
-From: Ruben Kerkhof <ruben@rubenkerkhof.com>
-Date: Wed, 24 Dec 2014 20:22:04 +0100
-Subject: [PATCH] Remove hardcoded -lresolv, -lnsl and -lsocket
-
-We already check for the functions we need in libnsl
-and libsocket, and I assume we don't need libresolv
-
-Should fix #1967
----
- configure.ac | 15 ++-------------
- 1 file changed, 2 insertions(+), 13 deletions(-)
-
-diff --git a/configure.ac b/configure.ac
-index 47e008c..0ff566e 100644
---- a/configure.ac
-+++ b/configure.ac
-@@ -143,13 +143,13 @@ THREADFLAGS=""
+--- src/pdns/configure.ac	2014-12-26 15:12:42.897150401 +0000
++++ configure.ac	2014-12-26 15:17:45.385432167 +0000
+@@ -138,54 +138,36 @@ LIBCRYPT=$LIBS
+ LIBS="$my_save_LIBS"
+ AC_SUBST(LIBCRYPT)
+ 
+-DYNLINKFLAGS=""
+ THREADFLAGS=""
+ 
  AM_CONDITIONAL([OS_MACOSX], false)
  case "$host_os" in
  solaris2.10)
+-  AC_DEFINE(HAVE_IPV6,1,[If the host operating system understands IPv6])
 -  LIBS="-lposix4 -lresolv -lnsl -lsocket -lpthread -lrt $LIBS"
 +  LIBS="-lposix4 -lpthread -lrt $LIBS"
    CXXFLAGS="-D_REENTRANT $CXXFLAGS"
    ;;
+-
  solaris2.8 | solaris2.9 )
    AC_DEFINE(NEED_POSIX_TYPEDEF,,[If POSIX typedefs need to be defined])
    AC_DEFINE(NEED_INET_NTOP_PROTO,,[If your OS is so broken that it needs an additional prototype])
+-  AC_DEFINE(HAVE_IPV6,1,[If the host operating system understands IPv6])
+-  LIBS="-lposix4 -lresolv -lnsl -lsocket -lpthread $LIBS"
+-  CXXFLAGS="-D_REENTRANT $CXXFLAGS"
+-  ;;
+-solaris2.6 | solaris2.7)
+-  AC_DEFINE(NEED_POSIX_TYPEDEF,,[If POSIX typedefs need to be defined])
+-  AC_DEFINE(NEED_INET_NTOP_PROTO,,[If your OS is so broken that it needs an additional prototype])
 -  LIBS="-lposix4 -lresolv -lnsl -lsocket -lpthread $LIBS"
 +  LIBS="-lposix4 -lpthread $LIBS"
    CXXFLAGS="-D_REENTRANT $CXXFLAGS"
    ;;
  linux*)
-@@ -305,17 +305,6 @@ for a in $modules; do
+-  AC_DEFINE(HAVE_IPV6,1,[If the host operating system understands IPv6])
+-  DYNLINKFLAGS="-rdynamic"
+-  LDFLAGS="$LDFLAGS -lrt"
+   THREADFLAGS="-pthread"
+   CXXFLAGS="-D_GNU_SOURCE $CXXFLAGS"
+   ;;
+ darwin*)
+-  AC_DEFINE(HAVE_IPV6,1,[If the host operating system understands IPv6])
+-  DYNLINKFLAGS="-rdynamic"
+-  LDFLAGS="-pthread $LDFLAGS"
+-  CXXFLAGS="-pthread $CXXFLAGS -D__APPLE_USE_RFC_3542"
++  CXXFLAGS="-D__APPLE_USE_RFC_3542 $CXXFLAGS"
+   AM_CONDITIONAL([OS_MACOSX], true)
+   ;;
+ *)
+-  AC_DEFINE(HAVE_IPV6,1,[If the host operating system understands IPv6])
+-  DYNLINKFLAGS="-rdynamic"
+   LDFLAGS="-pthread $LDFLAGS"
+   CXXFLAGS="-pthread $CXXFLAGS"
+   ;;
+ esac
+ 
+ AC_SUBST(THREADFLAGS)
+-AC_SUBST(DYNLINKFLAGS)
++AC_SUBST([DYNLINKFLAGS], [-export-dynamic])
+ 
+ PDNS_ENABLE_VERBOSE_LOGGING
+ PDNS_WITH_SYSTEM_POLARSSL
+@@ -194,24 +176,17 @@ PDNS_ENABLE_PKCS11
+ PDNS_WITH_CRYPTOPP
+ PDNS_ENABLE_REMOTEBACKEND_ZEROMQ
+ 
+-AC_MSG_CHECKING([whether we should build static binaries])
++AC_MSG_CHECKING([whether we will be building static binaries])
+ 
+ AC_ARG_ENABLE([static-binaries],
+-  [AS_HELP_STRING([--enable-static-binaries],[build static binaries])],
+-  [case "${enableval}" in
+-    yes) static=true ;;
+-    no)  static=false ;;
+-    *) AC_MSG_ERROR(bad value ${enableval} for --enable-static-binaries) ;;
+-   esac],
+-   [debug=false]
++  [AS_HELP_STRING([--enable-static-binaries],[build static binaries @<:@default=no@:>@])],
++  [static=$enableval],
++  [static=no],
+ )
+ AC_MSG_RESULT([$static])
+-
+-AM_CONDITIONAL([ALLSTATIC], [test "x$static" = "xtrue"])
+-
+-if test "x$static" = "xtrue"; then
+-  LDFLAGS="-all-static $LDFLAGS"
+-fi
++AS_IF([test "x$static" != "xno"],
++  [LDFLAGS="-all-static $LDFLAGS"]
++)
+ 
+ modules="bind gmysql geo random"
+ AC_ARG_WITH([modules],
+@@ -244,12 +219,7 @@ AC_ARG_ENABLE([pdns-server],
+   [enable_pdns_server=yes]
+ )
+ AC_MSG_RESULT([$enable_pdns_server])
+-
+-AS_IF([test "x$enable_pdns_server" = "xyes"],
+-  [programdescend=pdns]
+-)
+-
+-AC_SUBST(programdescend)
++AM_CONDITIONAL([WITH_PDNS_SERVER],[test "x$enable_pdns_server" != "xno"])
+ 
+ AC_ARG_ENABLE([gcc-skip-locking],
+   [AS_HELP_STRING([--enable-gcc-skip-locking],[if we should forcefully skip gcc locking @<:@default=no@:>@])],
+@@ -297,6 +267,14 @@ for a in $modules $dynmodules; do
+     geoip)
+       PDNS_CHECK_GEOIP
+       ;;
++    lua)
++      AS_IF([test "x$with_lua" = "xno"],
++        AC_MSG_ERROR([Lua backend needs lua, run ./configure --with-lua])
++      )
++      AS_IF([test "x$LUAPC" = "x"],
++        AC_MSG_ERROR([Lua backend needs lua but we cannot find it])
++      )
++      ;;
+   esac
+ done
+ 
+@@ -327,17 +305,6 @@ for a in $modules; do
  
    if test ${a} = "gpgsql"; then
      LIBS="$LIBS $LIBCRYPT"
@@ -49,3 +138,46 @@ index 47e008c..0ff566e 100644
    fi
  done
  
+@@ -345,14 +312,18 @@ for a in $dynmodules; do
+   moduledirs="$moduledirs ${a}backend"
+ done
+ 
+-CFLAGS="$CFLAGS $PIE_CFLAGS"
+-CXXFLAGS="$CXXFLAGS $PIE_CFLAGS"
+-LDFLAGS="$LDFLAGS $RELRO_LDFLAGS"
++CFLAGS="$PIE_CFLAGS $CFLAGS"
++CXXFLAGS="$PIE_CFLAGS $CXXFLAGS"
++LDFLAGS="$RELRO_LDFLAGS $LDFLAGS"
+ 
+ AC_SUBST(LIBS)
+ 
+-AC_SUBST([AM_CPPFLAGS], ['-I$(top_builddir) -I$(top_srcdir)'])
+-AC_SUBST([AM_CXXFLAGS], ['-I$(top_builddir) -I$(top_srcdir)'])
++AC_SUBST([AM_CPPFLAGS],
++  ["AS_ESCAPE([-I$(top_builddir) -I$(top_srcdir)]) $THREADFLAGS $BOOST_CPPFLAGS"]
++)
++
++AC_SUBST([YAHTTP_CFLAGS], ['-I$(top_srcdir)/pdns/ext/yahttp'])
++AC_SUBST([YAHTTP_LIBS], ['-L$(top_builddir)/pdns/ext/yahttp/yahttp -lyahttp'])
+ 
+ export moduledirs moduleobjects modulelibs
+ 
+@@ -361,15 +332,14 @@ AC_CONFIG_FILES([
+   modules/Makefile
+   pdns/Makefile
+   codedocs/Makefile
+-  pdns/pdns
++  pdns/pdns.init
+   pdns/ext/Makefile
+   pdns/ext/yahttp/Makefile
+   pdns/ext/yahttp/yahttp/Makefile
+-  pdns/ext/polarssl-1.3.2/Makefile
+-  pdns/ext/polarssl-1.3.2/library/Makefile
++  pdns/ext/polarssl/Makefile
++  pdns/ext/polarssl/library/Makefile
+   pdns/ext/rapidjson/Makefile
+   modules/bindbackend/Makefile
+-  modules/db2backend/Makefile
+   modules/geobackend/Makefile
+   modules/geoipbackend/Makefile
+   modules/gmysqlbackend/Makefile
