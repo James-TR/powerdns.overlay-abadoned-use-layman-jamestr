@@ -1,5 +1,5 @@
---- configure.ac	2015-01-08 02:45:23.402131639 +0000
-+++ /home/xreaper/src/rubenk-pdns/configure.ac	2015-01-08 02:59:16.110131639 +0000
+--- a/configure.ac
++++ b/configure.ac
 @@ -39,13 +39,9 @@ AC_CC_STACK_PROTECTOR
  AC_CC_PARAM_SSP_BUFFER_SIZE([4])
  AC_CC_D_FORTIFY_SOURCE
