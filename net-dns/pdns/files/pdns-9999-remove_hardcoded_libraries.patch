@@ -1,5 +1,5 @@
---- configure.ac	2015-01-08 02:38:43.471131639 +0000
-+++ /home/xreaper/src/rubenk-pdns/configure.ac	2015-01-08 02:34:39.313131639 +0000
+--- a/configure.ac	2015-01-08 02:38:43.471131639 +0000
++++ b/configure.ac	2015-01-08 02:34:39.313131639 +0000
 @@ -18,7 +18,7 @@ AC_CANONICAL_HOST
  
  AC_PROG_CC
