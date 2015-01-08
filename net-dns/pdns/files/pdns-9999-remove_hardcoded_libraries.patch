@@ -1,7 +1,7 @@
-From 052ec81dc4f3b0f476c89d86597f6365c1072e38 Mon Sep 17 00:00:00 2001
+From 29403f48fe888460010a9ae7f5b90dcccc597ced Mon Sep 17 00:00:00 2001
 From: Ruben Kerkhof <ruben@rubenkerkhof.com>
 Date: Wed, 24 Dec 2014 20:22:04 +0100
-Subject: [PATCH] Remove hardcoded -lresolv, -lnsl and -lsocket
+Subject: [PATCH 1/4] Remove hardcoded -lresolv, -lnsl and -lsocket
 
 We already check for the functions we need in libnsl
 and libsocket, and I assume we don't need libresolv
@@ -12,11 +12,11 @@ Should fix #1967
  1 file changed, 2 insertions(+), 13 deletions(-)
 
 diff --git a/configure.ac b/configure.ac
-index 47e008c..0ff566e 100644
+index d43b6af..daad9ad 100644
 --- a/configure.ac
 +++ b/configure.ac
-@@ -143,13 +143,13 @@ THREADFLAGS=""
- AM_CONDITIONAL([OS_MACOSX], false)
+@@ -145,13 +145,13 @@ THREADFLAGS=""
+ 
  case "$host_os" in
  solaris2.10)
 -  LIBS="-lposix4 -lresolv -lnsl -lsocket -lpthread -lrt $LIBS"
@@ -31,7 +31,7 @@ index 47e008c..0ff566e 100644
    CXXFLAGS="-D_REENTRANT $CXXFLAGS"
    ;;
  linux*)
-@@ -305,17 +305,6 @@ for a in $modules; do
+@@ -300,17 +300,6 @@ for a in $modules; do
  
    if test ${a} = "gpgsql"; then
      LIBS="$LIBS $LIBCRYPT"
@@ -49,4 +49,105 @@ index 47e008c..0ff566e 100644
    fi
  done
  
+-- 
+2.2.1
+
+From 2ff94fe6b4ed478791ad77d88d7250b00320fe70 Mon Sep 17 00:00:00 2001
+From: Ruben Kerkhof <ruben@rubenkerkhof.com>
+Date: Fri, 2 Jan 2015 19:53:46 +0100
+Subject: [PATCH 2/4] Check for inet_aton in libresolv
+
+---
+ configure.ac | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/configure.ac b/configure.ac
+index daad9ad..8234cf3 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -47,6 +47,10 @@ AC_CHECK_FUNC([gethostent], [], [
+  AC_CHECK_LIB([nsl], [gethostent], [LIBS="-lnsl $LIBS"])
+ ])
+ 
++AC_CHECK_FUNC([inet_aton], [], [
++ AC_CHECK_LIB([resolv], [inet_aton], [LIBS="-lresolv $LIBS"])
++])
++
+ m4_ifndef([LT_INIT],[
+ AC_PROG_LIBTOOL([disable-static])
+ ],[
+-- 
+2.2.1
+
+From f794b9a00fa1967613fae8d9fb89f568b2099ac5 Mon Sep 17 00:00:00 2001
+From: Ruben Kerkhof <ruben@rubenkerkhof.com>
+Date: Fri, 2 Jan 2015 19:54:28 +0100
+Subject: [PATCH 3/4] Indent
+
+---
+ configure.ac | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 8234cf3..27d4abe 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -40,15 +40,15 @@ AC_CC_PARAM_SSP_BUFFER_SIZE([4])
+ AC_CC_D_FORTIFY_SOURCE
+ 
+ AC_CHECK_FUNC([socket], [], [
+- AC_CHECK_LIB([socket], [socket], [LIBS="-lsocket $LIBS"])
++  AC_CHECK_LIB([socket], [socket], [LIBS="-lsocket $LIBS"])
+ ])
+ 
+ AC_CHECK_FUNC([gethostent], [], [
+- AC_CHECK_LIB([nsl], [gethostent], [LIBS="-lnsl $LIBS"])
++  AC_CHECK_LIB([nsl], [gethostent], [LIBS="-lnsl $LIBS"])
+ ])
+ 
+ AC_CHECK_FUNC([inet_aton], [], [
+- AC_CHECK_LIB([resolv], [inet_aton], [LIBS="-lresolv $LIBS"])
++  AC_CHECK_LIB([resolv], [inet_aton], [LIBS="-lresolv $LIBS"])
+ ])
+ 
+ m4_ifndef([LT_INIT],[
+-- 
+2.2.1
+
+From 3bdd962559eae5cd9d13e8616a44b8e3bf497880 Mon Sep 17 00:00:00 2001
+From: Ruben Kerkhof <ruben@rubenkerkhof.com>
+Date: Fri, 2 Jan 2015 20:05:39 +0100
+Subject: [PATCH 4/4] Use AC_SEARCH_LIBS
+
+---
+ configure.ac | 14 +++-----------
+ 1 file changed, 3 insertions(+), 11 deletions(-)
+
+diff --git a/configure.ac b/configure.ac
+index 27d4abe..606b509 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -39,17 +39,9 @@ AC_CC_STACK_PROTECTOR
+ AC_CC_PARAM_SSP_BUFFER_SIZE([4])
+ AC_CC_D_FORTIFY_SOURCE
+ 
+-AC_CHECK_FUNC([socket], [], [
+-  AC_CHECK_LIB([socket], [socket], [LIBS="-lsocket $LIBS"])
+-])
+-
+-AC_CHECK_FUNC([gethostent], [], [
+-  AC_CHECK_LIB([nsl], [gethostent], [LIBS="-lnsl $LIBS"])
+-])
+-
+-AC_CHECK_FUNC([inet_aton], [], [
+-  AC_CHECK_LIB([resolv], [inet_aton], [LIBS="-lresolv $LIBS"])
+-])
++AC_SEARCH_LIBS([socket], [socket])
++AC_SEARCH_LIBS([gethostent], [nsl])
++AC_SEARCH_LIBS([inet_aton], [resolv])
+ 
+ m4_ifndef([LT_INIT],[
+ AC_PROG_LIBTOOL([disable-static])
+-- 
+2.2.1
 
