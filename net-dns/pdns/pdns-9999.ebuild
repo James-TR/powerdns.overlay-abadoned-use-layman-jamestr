@@ -65,7 +65,6 @@ DEPEND="${RDEPEND}
 	doc? ( app-doc/doxygen )"
 
 src_prepare() {
-	epatch "${FILESDIR}"/${P}-remove_hardcoded_libraries.patch
 	eautoreconf
 }
 
